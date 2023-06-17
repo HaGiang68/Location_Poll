@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1072661765629",
+    "firebase_url": "https://locationpoll-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "locationpoll",
+    "storage_bucket": "locationpoll.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1072661765629:android:a16049613277e0cef50d94",
+        "android_client_info": {
+          "package_name": "com.loc_poll_crew.location_poll"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1072661765629-sik1i4me1mc1i7ls950diqlkc4m87obi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.loc_poll_crew.location_poll",
+            "certificate_hash": "417867fab3c63f6c3d327e48246cddd3114864e6"
+          }
+        },
+        {
+          "client_id": "1072661765629-dq247tlhm9b0qn8go57pffb5ftke5vo4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDLd5OCmYERwi9u02D2pa33MkgNbb4zl0o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1072661765629-dq247tlhm9b0qn8go57pffb5ftke5vo4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

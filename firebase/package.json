@@ -1,0 +1,22 @@
+{
+  "dependencies": {
+    "@types/mysql": "^2.15.21",
+    "mysql": "^2.18.1",
+    "sync-sql": "^1.0.2",
+    "ts-md5": "^1.2.11"
+  },
+  "scripts": {
+    "test-database": "mocha --exit test/database.spec.js",
+    "test-firestore": "mocha --exit test/firestore.spec.js --timeout 10000",
+    "test-functions": "mocha --exit functions/test/functions.test.js",
+    "test": "mocha --exit test/*.spec.js"
+  },
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^2.0.2",
+    "firebase-admin": "^10.0.2",
+    "firebase-functions-test": "^0.3.3",
+    "firebase-tools": "^7.1.1",
+    "mocha": "^8.0.1"
+  }
+}

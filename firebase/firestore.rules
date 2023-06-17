@@ -1,0 +1,144 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+   
+    function isLogin() {
+        return request.auth != null
+    }
+    match /users/{userId} {
+      allow create: if 
+        isLogin() &&
+        request.auth.uid == userId &&
+        request.resource.data.uuid is string &&
+        request.resource.data.uuid == userId &&
+        validUsersDoc_Elements();
+      allow read: if 
+        request.auth.uid == userId;
+      allow update: if 
+        request.auth.uid == userId &&
+        request.resource.data.uuid is string &&
+        request.resource.data.uuid == userId &&
+        request.resource.data.authLevel == resource.data.authLevel &&
+        validUsersDoc_Elements();
+
+      function validUsersDoc_Elements() {
+        return request.resource.data.keys().hasOnly(["uuid", "email", "userName", "authLevel"]) &&
+                request.resource.data.keys().hasAll( ["uuid"]);
+      }
+    }
+
+    match /polls/{pollID} {
+      allow create: if isLogin() && isTimeWindowValid() && isValidVoteDoc();
+      allow read: if isLogin();
+      allow update: if isPostOwner() && isLogin() && isTimeWindowValid() && isValidVoteDoc() && checkValidAfterPollStart();
+      allow delete: if isPostOwner() && isLogin();
+
+      function isPostOwner() {
+        return resource.data.owner.uuid == request.auth.uid;
+      }
+
+      function isTimeWindowValid() {
+        return (request.resource.data.requirements.timeRequirement.startTime <= request.resource.data.requirements.timeRequirement.endTime);
+      }
+
+      //do not change votes if poll already started
+      function checkValidAfterPollStart() {
+        return (pollNotStarted() || (notChangingChoicesAndStartingTimeCheck()));
+      }
+
+      function notChangingChoicesAndStartingTimeCheck() {
+        return  request.resource.data.questions == resource.data.questions && //questions and choices must be unchanged
+                request.resource.data.requirements.timeRequirement.startTime == resource.data.requirements.timeRequirement.startTime; //do not change the starting time
+      }
+
+      function pollNotStarted() {
+        return (request.time.toMillis() < resource.data.requirements.timeRequirement.startTime);
+      }
+
+      function isValidVoteDoc() {
+        return request.resource.data.questions.size() >= 1 && request.resource.data.questions[0].choices.size() > 1 &&
+                validVoteDoc_Elements() &&
+                validVoteDoc_Types();
+      }
+
+      // Validate the fields inside the vote document are correct
+      function validVoteDoc_Elements() {
+        return  request.resource.data.keys().hasOnly(["owner", "questions", "requirements", "title"]) &&
+                request.resource.data.keys().hasAll( ["owner", "questions", "requirements", "title"]) &&
+                validVoteDoc_Elements_Owner() &&
+                validVoteDoc_Elements_Requirements();
+      }
+      function validVoteDoc_Elements_Owner() { 
+        return  request.resource.data.owner.keys().hasOnly(["userName", "uuid"]) &&
+                request.resource.data.owner.keys().hasAll( ["userName", "uuid"]);
+      }
+      function validVoteDoc_Elements_Requirements() {
+        return  request.resource.data.requirements.keys().hasOnly(["authRequirement", "locationRequirement", "timeRequirement"]) &&
+                request.resource.data.requirements.keys().hasAll( ["authRequirement", "locationRequirement", "timeRequirement"]) &&
+                validVoteDoc_Elements_Requirements_AuthRequirement() &&
+                validVoteDoc_Elements_Requirements_LocationRequirement() &&
+                validVoteDoc_Elements_Requirements_TimeRequirement();
+      }
+      function  validVoteDoc_Elements_Requirements_AuthRequirement() {
+        return  request.resource.data.requirements.authRequirement.keys().hasOnly(["auth"]) &&
+                request.resource.data.requirements.authRequirement.keys().hasAll( ["auth"]);
+      }
+      function  validVoteDoc_Elements_Requirements_LocationRequirement() {
+        return  request.resource.data.requirements.locationRequirement.keys().hasOnly(["geoHash", "geoPoint", "radius"]) &&
+                request.resource.data.requirements.locationRequirement.keys().hasAll( ["geoHash", "geoPoint", "radius"]) &&
+                validVoteDoc_Elements_Requirements_LocationRequirement_GeoPoint();
+      }
+      function validVoteDoc_Elements_Requirements_LocationRequirement_GeoPoint() {
+        return  request.resource.data.requirements.locationRequirement.geoPoint.keys().hasOnly(["latitude", "longitude"]) &&
+                request.resource.data.requirements.locationRequirement.geoPoint.keys().hasAll( ["latitude", "longitude"]);
+      }
+      function validVoteDoc_Elements_Requirements_TimeRequirement() {
+        return  request.resource.data.requirements.timeRequirement.keys().hasOnly(["endTime", "startTime"]) &&
+                request.resource.data.requirements.timeRequirement.keys().hasAll( ["endTime", "startTime"]);
+      }
+
+      // Validate the correct data types inside the vote document
+      function validVoteDoc_Types() {
+        return  validVoteDoc_Types_Owner() &&
+                validVoteDoc_Types_Requirements() &&
+                request.resource.data.title is string;
+      }
+      function validVoteDoc_Types_Owner() {
+        return  request.resource.data.owner.userName is string &&
+                request.resource.data.owner.uuid is string;
+      }
+      function validVoteDoc_Types_Requirements() {
+        return  validVoteDoc_Types_Requirements_AuthRequirement() &&
+                validVoteDoc_Types_Requirements_locationRequirement() &&
+                validVoteDoc_Types_Requirements_TimeRequirement();
+      }
+      function validVoteDoc_Types_Requirements_AuthRequirement() {
+        return request.resource.data.requirements.authRequirement.auth is string;
+      }
+      function validVoteDoc_Types_Requirements_locationRequirement() {
+        return  validVoteDoc_Types_Requirements_locationRequirement_geoPoint() &&
+                request.resource.data.requirements.locationRequirement.geoHash is string &&
+                (request.resource.data.requirements.locationRequirement.radius is number ||
+                request.resource.data.requirements.locationRequirement.radius is int);
+      }
+      function validVoteDoc_Types_Requirements_locationRequirement_geoPoint() {
+        return  (request.resource.data.requirements.locationRequirement.geoPoint.latitude is float ||
+                request.resource.data.requirements.locationRequirement.geoPoint.latitude is int) &&
+                (request.resource.data.requirements.locationRequirement.geoPoint.longitude is float ||
+                request.resource.data.requirements.locationRequirement.geoPoint.longitude is int);
+      }
+      function validVoteDoc_Types_Requirements_TimeRequirement() {
+        return  request.resource.data.requirements.timeRequirement.endTime is int &&
+                request.resource.data.requirements.timeRequirement.startTime is int;
+      }
+    }
+
+    //These documents schould not be edited or viewed by any user because they are handled in cloudfunctions. Cloudfunctions have all privileges.
+    match /polls/votes/{voteID} {
+      allow create: if false;
+      allow read: if false;
+      allow write: if false; 
+    }
+  }
+}
